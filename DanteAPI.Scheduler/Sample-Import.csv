@@ -1,0 +1,3 @@
+﻿Schedule Reference,Course Reference,Dates,Start Time,End Time,Resource References,Address Line 1,Address Line 2
+TS001-Import,AD-GP,2025-03-01|2025-03-02,09:00,17:00,Mschumacher:4|CMcCrae:4,Address test,address test 2
+TS002-Import,AD-GP,2025-04-01|2025-04-02,09:00,17:00,Mschumacher:4|CMcCrae:4,Address test,address test 3

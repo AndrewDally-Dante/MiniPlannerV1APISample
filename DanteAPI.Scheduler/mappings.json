@@ -1,0 +1,37 @@
+﻿{
+    "Fields": [
+        {
+            "Source": "Schedule Reference",
+            "Target": "Reference",
+            "Lookup": true
+        },
+        {
+            "Source": "Course Reference",
+            "Target": "CourseReference"
+        },
+        {
+            "Source": "Dates",
+            "Target": "Dates"
+        },
+        {
+            "Source": "Start Time",
+            "Target": "StartTime"
+        },
+        {
+            "Source": "End Time",
+            "Target": "EndTime"
+        },
+        {
+            "Source": "Resource References",
+            "Target": "Resource"
+        },
+        {
+            "Source": "Address Line 1",
+            "Target": "VenueAddressLine1"
+        },
+        {
+            "Source": "Address Line 2",
+            "Target": "VenueAddressLine2"
+        }
+    ]
+}

@@ -25,6 +25,12 @@ namespace DanteAPI
             _client.DefaultRequestHeaders.Add("x-apikey", APIKey);
         }
 
+        public async Task<bool> ValidateApiKey()
+        {
+            var response = await CustomAction<object>("ValidateKey", new Dictionary<string, string>());
+            return response.IsSuccess;
+        }
+
         public async Task<ApiResponse<List<T>>> Select<T>(List<string> fields, List<Filter> filters)
         {
             string url = $"{DanteURL}/API/V1/{typeof(T).Name}/Select";
@@ -205,11 +211,11 @@ namespace DanteAPI
             return response;
         }
 
-        public async Task<ApiResponse<bool>> CustomAction<T>(string action, Dictionary<string, string> data)
+        public async Task<ApiResponse<T>> CustomAction<T>(string action, Dictionary<string, string> data)
         {
             string url = $"{DanteURL}/API/V1/{typeof(T).Name}/{action}";
 
-            var response = new ApiResponse<bool>();
+            var response = new ApiResponse<T>();
 
             try
             {
@@ -227,21 +233,38 @@ namespace DanteAPI
 
                 if (httpResponse.IsSuccessStatusCode)
                 {
-                    response.Data = true;
+                    if (typeof(T) == typeof(bool))
+                    {
+                        response.Data = (T)(object)true;
+                    }
+                    else
+                    {
+                        var options = new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        };
+                        response.Data = JsonSerializer.Deserialize<T>(responseBody, options);
+                    }
                     response.IsSuccess = true;
                 }
                 else
                 {
-                    response.Data = false;
                     response.ErrorMessage = responseBody;
                     response.IsSuccess = false;
+                    if (typeof(T) == typeof(bool))
+                    {
+                        response.Data = (T)(object)false;
+                    }
                 }
             }
             catch (Exception ex)
             {
-                response.Data = false;
                 response.ErrorMessage = ex.Message;
                 response.IsSuccess = false;
+                if (typeof(T) == typeof(bool))
+                {
+                    response.Data = (T)(object)false;
+                }
             }
 
             return response;

@@ -62,6 +62,7 @@ namespace DanteAPI.Entities
 
         #endregion
 
+
         public int? TutorResourceID { get; set; }
         public DateTime? EnteredDate { get; set; }
         public string Notes { get; set; }
