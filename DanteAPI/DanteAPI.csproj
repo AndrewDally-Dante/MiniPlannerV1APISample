@@ -4,6 +4,16 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+	<PackageId>Dante.Api</PackageId>
+	  <Version>1.0.0</Version>
+	  <Authors>Dante Systems</Authors>
+	  <Company>Dante Systems</Company>
+	  <Description>A wrapper library for the Dante.app API</Description>
+	  <PackageTags>api;wrapper;dantesystems;dante</PackageTags>
+	  <PackageLicenseExpression>MIT</PackageLicenseExpression>
+	  <PackageProjectUrl>https://github.com/AndrewDally-Dante/MiniPlannerV1APISample</PackageProjectUrl>
+	  <RepositoryUrl>https://github.com/AndrewDally-Dante/MiniPlannerV1APISample</RepositoryUrl>
+	  <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
 </Project>
