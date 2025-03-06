@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -85,6 +86,9 @@ namespace DanteAPI
             return response;
         }
 
+        /// <summary>
+        /// Inserts an entity using a dictionary of field names and values
+        /// </summary>
         public async Task<ApiResponse<T>> Insert<T>(Dictionary<string, string> data)
         {
             string url = $"{DanteURL}/API/V1/{typeof(T).Name}/Insert";
@@ -130,6 +134,21 @@ namespace DanteAPI
             return response;
         }
 
+        /// <summary>
+        /// Inserts an entity by converting the entity object to a dictionary
+        /// </summary>
+        public async Task<ApiResponse<T>> InsertEntity<T>(T entity)
+        {
+            // Convert entity to dictionary
+            Dictionary<string, string> data = ConvertEntityToDictionary(entity);
+
+            // Call the existing Insert method
+            return await Insert<T>(data);
+        }
+
+        /// <summary>
+        /// Updates an entity using a dictionary of field names and values
+        /// </summary>
         public async Task<ApiResponse<T>> Update<T>(int id, Dictionary<string, string> data)
         {
             string url = $"{DanteURL}/API/V1/{typeof(T).Name}/Update?id={id}";
@@ -173,6 +192,50 @@ namespace DanteAPI
             }
 
             return response;
+        }
+
+        /// <summary>
+        /// Updates an entity by converting the entity object to a dictionary
+        /// </summary>
+        public async Task<ApiResponse<T>> UpdateEntity<T>(int id, T entity)
+        {
+            // Convert entity to dictionary
+            Dictionary<string, string> data = ConvertEntityToDictionary(entity);
+
+            // Call the existing Update method
+            return await Update<T>(id, data);
+        }
+
+        /// <summary>
+        /// Converts an entity object to a dictionary using reflection
+        /// </summary>
+        private Dictionary<string, string> ConvertEntityToDictionary<T>(T entity)
+        {
+            var dictionary = new Dictionary<string, string>();
+
+            if (entity == null)
+                return dictionary;
+
+            // Get all properties of the entity
+            PropertyInfo[] properties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+            foreach (PropertyInfo property in properties)
+            {
+                // Skip properties that can't be read
+                if (!property.CanRead)
+                    continue;
+
+                // Get the property value
+                object value = property.GetValue(entity);
+
+                // Convert value to string (handling null values)
+                string stringValue = value?.ToString();
+
+                // Add to dictionary
+                dictionary.Add(property.Name, stringValue);
+            }
+
+            return dictionary;
         }
 
         public async Task<ApiResponse<bool>> Delete<T>(int id)
@@ -268,6 +331,18 @@ namespace DanteAPI
             }
 
             return response;
+        }
+
+        /// <summary>
+        /// Performs a custom action using an entity object instead of a dictionary
+        /// </summary>
+        public async Task<ApiResponse<T>> CustomActionEntity<T, E>(string action, E entity)
+        {
+            // Convert entity to dictionary
+            Dictionary<string, string> data = ConvertEntityToDictionary(entity);
+
+            // Call the existing CustomAction method
+            return await CustomAction<T>(action, data);
         }
 
         public class Filter
