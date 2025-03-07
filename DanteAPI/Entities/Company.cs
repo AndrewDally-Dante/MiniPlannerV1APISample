@@ -1,10 +1,13 @@
-﻿namespace DanteAPI.Entities
+﻿using DanteAPI.Entities.References;
+
+namespace DanteAPI.Entities
 {
     public  class Company
     {
         public int ID { get; set; }
         public string ImportID { get; set; }
-        public short CompanyType { get; set; }
+        public References.GenericItem CompanyType { get; set; }
+        public string CompanyTypeLookup { get; set; }
         public string Reference { get; set; }
         public string Name { get; set; }
         public bool Active { get; set; }
@@ -36,6 +39,14 @@
         public System.DateTime? EnteredDate { get; set; }
 
         public System.DateTime? ModifiedDate { get; set; }
+
+        public int? AccountStatusID { get; set; }
+        public References.Status AccountStatus { get; set; }
+        public string AccountStatusLookup { get; set; }
+
+        public GenericItem EnquirySource { get; set; }
+        public string EnquirySourceLookup { get; set; }
+
 
         #region Custom Fields
         //Custom fields are dynamic, so the below can be expanded to include additional fields
