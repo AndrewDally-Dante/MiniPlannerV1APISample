@@ -135,18 +135,6 @@ namespace DanteAPI
         }
 
         /// <summary>
-        /// Inserts an entity by converting the entity object to a dictionary
-        /// </summary>
-        public async Task<ApiResponse<T>> InsertEntity<T>(T entity)
-        {
-            // Convert entity to dictionary
-            Dictionary<string, string> data = ConvertEntityToDictionary(entity);
-
-            // Call the existing Insert method
-            return await Insert<T>(data);
-        }
-
-        /// <summary>
         /// Updates an entity using a dictionary of field names and values
         /// </summary>
         public async Task<ApiResponse<T>> Update<T>(int id, Dictionary<string, string> data)
@@ -192,18 +180,6 @@ namespace DanteAPI
             }
 
             return response;
-        }
-
-        /// <summary>
-        /// Updates an entity by converting the entity object to a dictionary
-        /// </summary>
-        public async Task<ApiResponse<T>> UpdateEntity<T>(int id, T entity)
-        {
-            // Convert entity to dictionary
-            Dictionary<string, string> data = ConvertEntityToDictionary(entity);
-
-            // Call the existing Update method
-            return await Update<T>(id, data);
         }
 
         /// <summary>
