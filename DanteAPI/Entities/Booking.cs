@@ -18,6 +18,7 @@
         public Company Company { get; set; }
 
         public int? CoordinatorDelegateID { get; set; }
+        public Delegate CoordinatorDelegate { get; set; }
         public string AddressLine1 { get; set; }
         public string AddressLine2 { get; set; }
         public string AddressLine3 { get; set; }
@@ -43,8 +44,6 @@
         public Decimal? TotalTax { get; private set; }
         public Decimal? TotalWithTax { get; private set; }
 
-        //public ICollection<Misc.BookingItem> Items { get; set; }
-
-
+        public IEnumerable<References.BookingItem> Items { get; set; }
     }
 }
