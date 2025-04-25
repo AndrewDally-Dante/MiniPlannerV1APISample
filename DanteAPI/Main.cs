@@ -32,7 +32,7 @@ namespace DanteAPI
             return response.IsSuccess;
         }
 
-        public async Task<ApiResponse<List<T>>> Select<T>(List<string> fields, List<Filter> filters)
+        public async Task<ApiResponse<List<T>>> Select<T>(List<string> fields, List<Filter> filters, int? pagesize = null, int? pageindex = null)
         {
             string url = $"{DanteURL}/API/V1/{typeof(T).Name}/Select";
 
@@ -47,6 +47,10 @@ namespace DanteAPI
                 var filtersEncoded = Uri.EscapeDataString(filtersJson);
                 queryParams.Add("filters=" + filtersEncoded);
             }
+            if (pagesize != null)
+                queryParams.Add("pagesize=" + pagesize);
+            if (pageindex != null)
+                queryParams.Add("pageindex=" + pageindex);
 
             if (queryParams.Count > 0)
                 url += "?" + string.Join("&", queryParams);
