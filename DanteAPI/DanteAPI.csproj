@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 	<PackageId>Dante.Api</PackageId>
-	  <Version>1.0.3</Version>
+	  <Version>1.0.4</Version>
 	  <Authors>Dante Systems</Authors>
 	  <Company>Dante Systems</Company>
 	  <Description>A wrapper library for the Dante.app API</Description>
