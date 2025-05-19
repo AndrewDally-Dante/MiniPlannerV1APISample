@@ -53,7 +53,7 @@
         public string VenueNotes { get; set; }
 
         public int? VenueResourceID { get; set; }
-
+        public References.GenericItem VenueSite { get; set; }
         #endregion
 
 
@@ -62,6 +62,8 @@
         public string Notes { get; set; }
 
         public bool ShowOnline { get; set; }
+
+        
 
         #region Custom Fields
         public string Custom1 { get; set; }

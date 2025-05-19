@@ -16,7 +16,7 @@
 
         public int? CompanyID { get; set; }
         public Company Company { get; set; }
-
+        public string CompanyAccountReference { get; set; }
         public int? CoordinatorDelegateID { get; set; }
         public Delegate CoordinatorDelegate { get; set; }
         public string AddressLine1 { get; set; }
