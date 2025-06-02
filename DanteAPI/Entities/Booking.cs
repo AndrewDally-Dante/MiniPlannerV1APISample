@@ -39,10 +39,10 @@
         public string NotesExternal { get; set; }
         public string PurchaseOrder { get; set; }
 
-        public Decimal? Total { get; private set; }
+        public Decimal? Total { get; set; }
 
-        public Decimal? TotalTax { get; private set; }
-        public Decimal? TotalWithTax { get; private set; }
+        public Decimal? TotalTax { get; set; }
+        public Decimal? TotalWithTax { get; set; }
 
         public IEnumerable<References.BookingItem> Items { get; set; }
     }
