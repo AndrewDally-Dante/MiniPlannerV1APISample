@@ -23,8 +23,8 @@
         public string NationalInsuranceNumber { get; set; }
         public string PayrollNumber { get; set; }
         public string DietaryRequirements { get; set; }
-        public string SpecialRequirements { get; set; }
-        public string Notes { get; set; }
+        public References.GenericItem Gender { get; set; }
+        public References.GenericItem Ethnicity { get; set; }
         public System.DateTime? StartDate { get; set; }
         public System.DateTime? LeaveDate { get; set; }
         public int? CompanyID { get; set; }
@@ -44,21 +44,15 @@
         public System.DateTime? ModifiedDate { get; set; }
 
         public string ImageURL { get; set; }
-
+        public References.File ImageFile { get; set; }
         public bool Coordinator { get; set; }
-
-        #region Custom Fields
-        public string Custom1 { get; set; }
-        public string Custom2 { get; set; }
-        public string Custom3 { get; set; }
-        public string Custom4 { get; set; }
-        public string Custom5 { get; set; }
-        public string Custom6 { get; set; }
-        public string Custom7 { get; set; }
-        public string Custom8 { get; set; }
-        public string Custom9 { get; set; }
-        public string Custom10 { get; set; }
-        #endregion
+        public string CustomField { get; set; }
+        public string GenderLookup { get; set; }
+        public string EthnicityLookup { get; set; }
+        public string AddressCountryLookup { get; set; }
+        public string CompanyNameLookup { get; set; }
+        public string CompanyReferenceLookup { get; set; }
+        public string CompanyImportIDLookup { get; set; }
 
     }
 }

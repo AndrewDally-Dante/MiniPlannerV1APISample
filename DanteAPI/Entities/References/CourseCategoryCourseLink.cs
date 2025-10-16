@@ -6,10 +6,8 @@ using System.Threading.Tasks;
 
 namespace DanteAPI.Entities.References
 {
-    public class GenericItem
+    public class CourseCategoryCourseLink
     {
-        public int ID { get; set; }
-        public short Type { get; set; }
-        public string Name { get; set; }
+        public CourseCategory Category { get; set; }
     }
 }

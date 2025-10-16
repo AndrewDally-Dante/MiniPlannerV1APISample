@@ -1,5 +1,4 @@
 ﻿using DanteAPI.Entities.References;
-
 namespace DanteAPI.Entities
 {
     public  class Company

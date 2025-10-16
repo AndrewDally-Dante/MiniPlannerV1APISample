@@ -5,7 +5,7 @@
         public int ID { get; set; }
         public int ScheduleID { get; set; }
         public int Reference { get; set; }
-        public string ImportID { get; set; }
+    public string ImportID { get; set; }
         public DateTime EnteredDate { get; set; }
         public int BookingID { get; set; }
         public Booking Booking { get; set; }
@@ -15,7 +15,7 @@
         public bool GroupBooking { get; set; }
 
         public int? StatusID { get; set; }
-        public decimal Price { get; set; }
+    public decimal Price { get; set; }
         public int? TaxCodeID { get; set; }
         public string NominalCode { get; set; }
 
@@ -29,16 +29,9 @@
         public System.DateTime? ModifiedDate { get; set; }
 
         #region Custom Fields
-        public string Custom1 { get; set; }
-        public string Custom2 { get; set; }
-        public string Custom3 { get; set; }
-        public string Custom4 { get; set; }
-        public string Custom5 { get; set; }
-        public string Custom6 { get; set; }
-        public string Custom7 { get; set; }
-        public string Custom8 { get; set; }
-        public string Custom9 { get; set; }
-        public string Custom10 { get; set; }
+    public string CustomField { get; set; }
+    public string StatusLookup { get; set; }
+    public string ResultLookup { get; set; }
         #endregion
 
 
