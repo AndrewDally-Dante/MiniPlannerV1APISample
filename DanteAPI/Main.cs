@@ -26,10 +26,43 @@ namespace DanteAPI
             _client.DefaultRequestHeaders.Add("x-apikey", APIKey);
         }
 
-        public async Task<bool> ValidateApiKey()
+        public async Task<ApiResponse<ValidateKeyResult>> ValidateApiKey()
         {
-            var response = await CustomAction<object>("ValidateKey", new Dictionary<string, string>());
-            return response.IsSuccess;
+            string url = $"{DanteURL}/API/V1/ValidateKey";
+
+            var response = new ApiResponse<ValidateKeyResult>();
+
+            try
+            {
+                HttpResponseMessage httpResponse = await _client.GetAsync(url);
+
+                response.StatusCode = httpResponse.StatusCode;
+
+                string responseBody = await httpResponse.Content.ReadAsStringAsync();
+
+                if (httpResponse.IsSuccessStatusCode)
+                {
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    };
+
+                    response.Data = JsonSerializer.Deserialize<ValidateKeyResult>(responseBody, options);
+                    response.IsSuccess = true;
+                }
+                else
+                {
+                    response.ErrorMessage = responseBody;
+                    response.IsSuccess = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                response.ErrorMessage = ex.Message;
+                response.IsSuccess = false;
+            }
+
+            return response;
         }
 
         public async Task<ApiResponse<List<T>>> Select<T>(List<string> fields, List<Filter> filters, int? pagesize = null, int? pageindex = null)
@@ -256,8 +289,12 @@ namespace DanteAPI
 
         public async Task<ApiResponse<T>> CustomAction<T>(string action, Dictionary<string, string> data)
         {
-            string url = $"{DanteURL}/API/V1/{typeof(T).Name}/{action}";
 
+            string url;
+            if (typeof(T) == typeof(object))
+                url = $"{DanteURL}/API/V1/{action}";
+            else url = $"{DanteURL}/API/V1/{typeof(T).Name}/{action}";
+            
             var response = new ApiResponse<T>();
 
             try
@@ -345,5 +382,18 @@ namespace DanteAPI
         public T Data { get; set; }                   // The data returned from the API
         public string ErrorMessage { get; set; }      // The error message, if any
         public HttpStatusCode StatusCode { get; set; } // The HTTP status code
+    }
+
+    public class ValidateKeyResult
+    {
+        public bool Valid { get; set; }
+        public List<string> Messages { get; set; }
+        public List<ValidateKeyPermission> Permisison { get; set; }
+    }
+    public class ValidateKeyPermission
+    {
+        public string Context { get; set; }
+        public int PermissionsValue { get; set; }
+        public List<string> PermissionsList { get; set; }
     }
 }
