@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DanteAPI", "DanteAPI\DanteA
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DanteAPI.Scheduler", "DanteAPI.Scheduler\DanteAPI.Scheduler.csproj", "{3595C606-3D92-430A-B263-A034365C10DD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DanteAPI.Backup", "DanteAPI.Backup\DanteAPI.Backup.csproj", "{2BD13007-6FB8-476B-92E1-F04D79BB6BBF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{3595C606-3D92-430A-B263-A034365C10DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3595C606-3D92-430A-B263-A034365C10DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3595C606-3D92-430A-B263-A034365C10DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2BD13007-6FB8-476B-92E1-F04D79BB6BBF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2BD13007-6FB8-476B-92E1-F04D79BB6BBF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2BD13007-6FB8-476B-92E1-F04D79BB6BBF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2BD13007-6FB8-476B-92E1-F04D79BB6BBF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
