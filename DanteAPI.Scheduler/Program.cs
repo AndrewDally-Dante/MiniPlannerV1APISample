@@ -108,11 +108,10 @@ class Program
         string apiKey = configuration["DanteAPIKey"];
         string apiUrl = configuration["DanteURL"];
 
-        // Get thread count from configuration (default to 1, max 10)
         int maxThreads = 1;
         if (int.TryParse(configuration["MaxThreads"], out int configThreads))
         {
-            maxThreads = Math.Min(Math.Max(1, configThreads), 10);
+            maxThreads = Math.Min(Math.Max(1, configThreads), 5);//Max 5 threads
         }
         Console.WriteLine($"Using {maxThreads} thread(s) for processing.");
         Log($"Using {maxThreads} thread(s) for processing.");
@@ -168,8 +167,8 @@ class Program
             return;
         }
 
-        string lookupField = mappings.Fields.FirstOrDefault(f => f.Lookup)?.Source;
-        if (lookupField == null)
+        var lookup = mappings.Fields.FirstOrDefault(f => f.Lookup);
+        if (lookup == null)
         {
             var errorMsg = "Mappings must have exactly one lookup field.";
             Console.WriteLine(errorMsg);
@@ -177,12 +176,17 @@ class Program
             return;
         }
 
-        Console.WriteLine($"Using '{lookupField}' as the lookup field.");
+        Console.WriteLine($"Using {lookup.Source}/{lookup.Target} as the lookup field.");
 
         // Process each row
         int totalRows = csvData.Count;
         int processedRows = 0;
+        int insertedRows = 0;
+        int updatedRows = 0;
+        int skippedRows = 0;
+        int failedRows = 0;
         object progressLock = new object();
+        var startTime = DateTime.Now;
 
         // Use SemaphoreSlim to limit concurrent operations
         using var semaphore = new SemaphoreSlim(maxThreads, maxThreads);
@@ -192,7 +196,7 @@ class Program
             await semaphore.WaitAsync();
             try
             {
-                string lookupValue = row.ContainsKey(lookupField) ? row[lookupField] : null;
+                string lookupValue = row.ContainsKey(lookup.Source) ? row[lookup.Source] : null;
                 if (string.IsNullOrEmpty(lookupValue))
                 {
                     var warnMsg = $"Skipping row {index + 1}: Lookup field is empty.";
@@ -201,6 +205,7 @@ class Program
                     lock (progressLock)
                     {
                         processedRows++;
+                        skippedRows++;
                     }
                     return;
                 }
@@ -210,20 +215,37 @@ class Program
                     // Create a separate API client for this thread
                     using var threadApiClient = new Main(apiUrl, apiKey);
                     
-                    var schedule = await GetScheduleByLookup(threadApiClient, lookupField, lookupValue);
-                    if (schedule == null)
+                    var schedule = await GetScheduleByLookup(threadApiClient, lookup.Target, lookupValue);
+                    bool isInsert = schedule == null;
+                    
+                    if (isInsert)
                     {
-                        Console.WriteLine($"Inserting new schedule for {lookupValue}...");
                         schedule = await InsertSchedule(threadApiClient, mappings, row);
                     }
 
-                    Console.WriteLine($"Updating schedule {schedule.ID} for {lookupValue}...");
                     await UpdateSchedule(threadApiClient, schedule.ID, mappings, row);
 
                     lock (progressLock)
                     {
                         processedRows++;
-                        Console.WriteLine($"Progress: {processedRows}/{totalRows} rows processed.");
+                        if (isInsert)
+                            insertedRows++;
+                        else
+                            updatedRows++;
+                            
+                        if (processedRows % 10 == 0 || processedRows == totalRows)
+                        {
+                            var elapsed = DateTime.Now - startTime;
+                            var avgTimePerRow = elapsed.TotalSeconds / processedRows;
+                            var remainingRows = totalRows - processedRows;
+                            var estimatedRemainingTime = TimeSpan.FromSeconds(avgTimePerRow * remainingRows);
+                            var estimatedCompletion = DateTime.Now.Add(estimatedRemainingTime);
+                            
+                            Console.WriteLine($"Progress: {processedRows}/{totalRows} rows | " +
+                                            $"Inserted: {insertedRows} | Updated: {updatedRows} | Skipped: {skippedRows} | Failed: {failedRows} | " +
+                                            $"Elapsed: {FormatTimeSpan(elapsed)} | " +
+                                            $"ETA: {estimatedCompletion:HH:mm:ss} ({FormatTimeSpan(estimatedRemainingTime)} remaining)");
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -234,6 +256,7 @@ class Program
                     lock (progressLock)
                     {
                         processedRows++;
+                        failedRows++;
                     }
                 }
             }
@@ -245,7 +268,27 @@ class Program
 
         await Task.WhenAll(tasks);
 
-        Console.WriteLine("Import complete.");
+        var totalElapsed = DateTime.Now - startTime;
+        var successfulRows = insertedRows + updatedRows;
+        
+        Console.WriteLine("\n=== Import Complete ===");
+        Console.WriteLine($"Total Rows Processed: {processedRows}/{totalRows}");
+        Console.WriteLine($"  - Inserted: {insertedRows}");
+        Console.WriteLine($"  - Updated: {updatedRows}");
+        Console.WriteLine($"  - Skipped: {skippedRows}");
+        Console.WriteLine($"  - Failed: {failedRows}");
+        Console.WriteLine($"Total Time: {FormatTimeSpan(totalElapsed)}");
+        Console.WriteLine($"Average Time per Row: {(totalElapsed.TotalSeconds / processedRows):F2}s");
+        
+        Log("\n=== Import Statistics ===");
+        Log($"Total Rows Processed: {processedRows}/{totalRows}");
+        Log($"  - Inserted: {insertedRows}");
+        Log($"  - Updated: {updatedRows}");
+        Log($"  - Skipped: {skippedRows}");
+        Log($"  - Failed: {failedRows}");
+        Log($"Total Time: {FormatTimeSpan(totalElapsed)}");
+        Log($"Average Time per Row: {(totalElapsed.TotalSeconds / processedRows):F2}s");
+        Log($"Successful Rows: {successfulRows} ({(successfulRows * 100.0 / totalRows):F1}%)");
     }
 
     static List<Dictionary<string, string>> LoadCsv(string filePath)
@@ -647,6 +690,22 @@ class Program
             {
                 // If we can't write to log file, just continue
             }
+        }
+    }
+
+    private static string FormatTimeSpan(TimeSpan timeSpan)
+    {
+        if (timeSpan.TotalHours >= 1)
+        {
+            return $"{(int)timeSpan.TotalHours}h {timeSpan.Minutes}m {timeSpan.Seconds}s";
+        }
+        else if (timeSpan.TotalMinutes >= 1)
+        {
+            return $"{timeSpan.Minutes}m {timeSpan.Seconds}s";
+        }
+        else
+        {
+            return $"{timeSpan.Seconds}s";
         }
     }
 
