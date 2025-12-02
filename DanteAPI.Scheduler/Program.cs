@@ -108,6 +108,15 @@ class Program
         string apiKey = configuration["DanteAPIKey"];
         string apiUrl = configuration["DanteURL"];
 
+        // Get thread count from configuration (default to 1, max 10)
+        int maxThreads = 1;
+        if (int.TryParse(configuration["MaxThreads"], out int configThreads))
+        {
+            maxThreads = Math.Min(Math.Max(1, configThreads), 10);
+        }
+        Console.WriteLine($"Using {maxThreads} thread(s) for processing.");
+        Log($"Using {maxThreads} thread(s) for processing.");
+
         if (string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(apiUrl))
         {
             var errorMsg = "API Key or API URL not set in environment variables.";
@@ -173,43 +182,68 @@ class Program
         // Process each row
         int totalRows = csvData.Count;
         int processedRows = 0;
+        object progressLock = new object();
 
-        foreach (var row in csvData)
+        // Use SemaphoreSlim to limit concurrent operations
+        using var semaphore = new SemaphoreSlim(maxThreads, maxThreads);
+
+        var tasks = csvData.Select(async (row, index) =>
         {
-            string lookupValue = row.ContainsKey(lookupField) ? row[lookupField] : null;
-            if (string.IsNullOrEmpty(lookupValue))
-            {
-                var warnMsg = $"Skipping row {processedRows + 1}: Lookup field is empty.";
-                Console.WriteLine(warnMsg);
-                LogWarning(warnMsg);
-                processedRows++;
-                continue;
-            }
-
+            await semaphore.WaitAsync();
             try
             {
-                var schedule = await GetScheduleByLookup(apiClient, lookupField, lookupValue);
-                if (schedule == null)
+                string lookupValue = row.ContainsKey(lookupField) ? row[lookupField] : null;
+                if (string.IsNullOrEmpty(lookupValue))
                 {
-                    Console.WriteLine($"Inserting new schedule for {lookupValue}...");
-                    schedule = await InsertSchedule(apiClient, mappings, row);
+                    var warnMsg = $"Skipping row {index + 1}: Lookup field is empty.";
+                    Console.WriteLine(warnMsg);
+                    LogWarning(warnMsg);
+                    lock (progressLock)
+                    {
+                        processedRows++;
+                    }
+                    return;
                 }
 
-                Console.WriteLine($"Updating schedule {schedule.ID} for {lookupValue}...");
-                await UpdateSchedule(apiClient, schedule.ID, mappings, row);
+                try
+                {
+                    // Create a separate API client for this thread
+                    using var threadApiClient = new Main(apiUrl, apiKey);
+                    
+                    var schedule = await GetScheduleByLookup(threadApiClient, lookupField, lookupValue);
+                    if (schedule == null)
+                    {
+                        Console.WriteLine($"Inserting new schedule for {lookupValue}...");
+                        schedule = await InsertSchedule(threadApiClient, mappings, row);
+                    }
 
-                processedRows++;
-                Console.WriteLine($"Progress: {processedRows}/{totalRows} rows processed.");
+                    Console.WriteLine($"Updating schedule {schedule.ID} for {lookupValue}...");
+                    await UpdateSchedule(threadApiClient, schedule.ID, mappings, row);
+
+                    lock (progressLock)
+                    {
+                        processedRows++;
+                        Console.WriteLine($"Progress: {processedRows}/{totalRows} rows processed.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    var errorMsg = $"Error processing row {index + 1} (lookup: {lookupValue}): {ex.Message}";
+                    Console.WriteLine(errorMsg);
+                    LogError(errorMsg);
+                    lock (progressLock)
+                    {
+                        processedRows++;
+                    }
+                }
             }
-            catch (Exception ex)
+            finally
             {
-                var errorMsg = $"Error processing row {processedRows + 1} (lookup: {lookupValue}): {ex.Message}";
-                Console.WriteLine(errorMsg);
-                LogError(errorMsg);
-                processedRows++;
+                semaphore.Release();
             }
-        }
-        
+        });
+
+        await Task.WhenAll(tasks);
 
         Console.WriteLine("Import complete.");
     }
@@ -566,42 +600,53 @@ class Program
         return scheduleResources;
     }
 
+    private static readonly object logLock = new object();
+
     private static void Log(string message)
     {
         var logMessage = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}";
-        try
+        lock (logLock)
         {
-            File.AppendAllText(logFilePath, logMessage + Environment.NewLine);
-        }
-        catch
-        {
-            // If we can't write to log file, just continue
+            try
+            {
+                File.AppendAllText(logFilePath, logMessage + Environment.NewLine);
+            }
+            catch
+            {
+                // If we can't write to log file, just continue
+            }
         }
     }
 
     private static void LogError(string message)
     {
         var logMessage = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] ERROR: {message}";
-        try
+        lock (logLock)
         {
-            File.AppendAllText(logFilePath, logMessage + Environment.NewLine);
-        }
-        catch
-        {
-            // If we can't write to log file, just continue
+            try
+            {
+                File.AppendAllText(logFilePath, logMessage + Environment.NewLine);
+            }
+            catch
+            {
+                // If we can't write to log file, just continue
+            }
         }
     }
 
     private static void LogWarning(string message)
     {
         var logMessage = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] WARNING: {message}";
-        try
+        lock (logLock)
         {
-            File.AppendAllText(logFilePath, logMessage + Environment.NewLine);
-        }
-        catch
-        {
-            // If we can't write to log file, just continue
+            try
+            {
+                File.AppendAllText(logFilePath, logMessage + Environment.NewLine);
+            }
+            catch
+            {
+                // If we can't write to log file, just continue
+            }
         }
     }
 
