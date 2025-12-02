@@ -431,15 +431,6 @@ namespace DanteAPI.Backup
             return idProperty?.GetValue(entity);
         }
 
-        static object FormatValueForClosedXML(object value)
-        {
-            if (value == null) return null;
-
-            // ClosedXML handles DateTime, decimal, int, etc. natively
-            // Just return the value as-is
-            return value;
-        }
-
         static void SetCellValue(IXLCell cell, object value)
         {
             if (value == null)
