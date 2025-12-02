@@ -16,10 +16,12 @@ class Program
 {
     private static string csvFilePath;
     private static bool fileSelected;
+    private static string logFilePath;
 
     private static readonly HashSet<string> PredefinedFields = new HashSet<string>
     {
-        "Dates", "StartTime", "EndTime", "Resource", "CourseID", "CourseReference"
+        "Dates", "StartTime", "EndTime", "Resource", "CourseID", "CourseReference",
+        "Venue_Resource", "Tutor_Internal_Resource", "Tutor_External_Resource"
     };
 
     [STAThread]
@@ -29,6 +31,10 @@ class Program
         Application.SetCompatibleTextRenderingDefault(false);
 
         Console.WriteLine("Initializing Console App...");
+
+        // Initialize log file with current date
+        logFilePath = $"import_log_{DateTime.Now:yyyyMMdd_HHmmss}.txt";
+        Log($"Import started at {DateTime.Now}");
 
         try
         {
@@ -50,9 +56,13 @@ class Program
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"An error occurred: {ex.Message}");
+            var errorMsg = $"An error occurred: {ex.Message}";
+            Console.WriteLine(errorMsg);
+            LogError(errorMsg);
+            LogError($"Stack trace: {ex.StackTrace}");
         }
 
+        Log($"Import completed at {DateTime.Now}");
         Console.WriteLine("Press any key to exit...");
         Console.ReadKey();
     }
@@ -100,7 +110,9 @@ class Program
 
         if (string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(apiUrl))
         {
-            Console.WriteLine("API Key or API URL not set in environment variables.");
+            var errorMsg = "API Key or API URL not set in environment variables.";
+            Console.WriteLine(errorMsg);
+            LogError(errorMsg);
             return;
         }
 
@@ -108,9 +120,11 @@ class Program
 
         // Validate API key
         var validationResult = await apiClient.ValidateApiKey();
-        if (!validationResult)
+        if (!validationResult.IsSuccess)
         {
-            Console.WriteLine("Invalid API Key.");
+            var errorMsg = "Invalid API Key: " + validationResult.ErrorMessage;
+            Console.WriteLine(errorMsg);
+            LogError(errorMsg);
             return;
         }
         Console.WriteLine("API Key validated successfully.");
@@ -120,7 +134,9 @@ class Program
         List<Dictionary<string, string>> csvData = LoadCsv(csvFilePath);
         if (csvData.Count == 0)
         {
-            Console.WriteLine("CSV file is empty.");
+            var errorMsg = "CSV file is empty.";
+            Console.WriteLine(errorMsg);
+            LogError(errorMsg);
             return;
         }
 
@@ -128,21 +144,27 @@ class Program
         string mappingsPath = "mappings.json";
         if (!File.Exists(mappingsPath))
         {
-            Console.WriteLine("Mappings file not found.");
+            var errorMsg = "Mappings file not found.";
+            Console.WriteLine(errorMsg);
+            LogError(errorMsg);
             return;
         }
 
         Mappings mappings = LoadMappings(mappingsPath);
         if (!ValidateMappings(mappings, csvData[0]))
         {
-            Console.WriteLine("Invalid mappings file.");
+            var errorMsg = "Invalid mappings file.";
+            Console.WriteLine(errorMsg);
+            LogError(errorMsg);
             return;
         }
 
         string lookupField = mappings.Fields.FirstOrDefault(f => f.Lookup)?.Source;
         if (lookupField == null)
         {
-            Console.WriteLine("Mappings must have exactly one lookup field.");
+            var errorMsg = "Mappings must have exactly one lookup field.";
+            Console.WriteLine(errorMsg);
+            LogError(errorMsg);
             return;
         }
 
@@ -157,23 +179,37 @@ class Program
             string lookupValue = row.ContainsKey(lookupField) ? row[lookupField] : null;
             if (string.IsNullOrEmpty(lookupValue))
             {
-                Console.WriteLine($"Skipping row {processedRows + 1}: Lookup field is empty.");
+                var warnMsg = $"Skipping row {processedRows + 1}: Lookup field is empty.";
+                Console.WriteLine(warnMsg);
+                LogWarning(warnMsg);
+                processedRows++;
                 continue;
             }
 
-            var schedule = await GetScheduleByLookup(apiClient, lookupField, lookupValue);
-            if (schedule == null)
+            try
             {
-                Console.WriteLine($"Inserting new schedule for {lookupValue}...");
-                schedule = await InsertSchedule(apiClient, mappings, row);
+                var schedule = await GetScheduleByLookup(apiClient, lookupField, lookupValue);
+                if (schedule == null)
+                {
+                    Console.WriteLine($"Inserting new schedule for {lookupValue}...");
+                    schedule = await InsertSchedule(apiClient, mappings, row);
+                }
+
+                Console.WriteLine($"Updating schedule {schedule.ID} for {lookupValue}...");
+                await UpdateSchedule(apiClient, schedule.ID, mappings, row);
+
+                processedRows++;
+                Console.WriteLine($"Progress: {processedRows}/{totalRows} rows processed.");
             }
-
-            Console.WriteLine($"Updating schedule {schedule.ID} for {lookupValue}...");
-            await UpdateSchedule(apiClient, schedule.ID, mappings, row);
-
-            processedRows++;
-            Console.WriteLine($"Progress: {processedRows}/{totalRows} rows processed.");
+            catch (Exception ex)
+            {
+                var errorMsg = $"Error processing row {processedRows + 1} (lookup: {lookupValue}): {ex.Message}";
+                Console.WriteLine(errorMsg);
+                LogError(errorMsg);
+                processedRows++;
+            }
         }
+        
 
         Console.WriteLine("Import complete.");
     }
@@ -218,7 +254,9 @@ class Program
         int lookupCount = mappings.Fields.Count(f => f.Lookup);
         if (lookupCount != 1)
         {
-            Console.WriteLine($"Error: Mappings must have exactly one lookup field. Found {lookupCount} lookup fields.");
+            var errorMsg = $"Error: Mappings must have exactly one lookup field. Found {lookupCount} lookup fields.";
+            Console.WriteLine(errorMsg);
+            LogError(errorMsg);
             return false;
         }
 
@@ -231,9 +269,11 @@ class Program
         if (missingHeaders.Any())
         {
             Console.WriteLine("Error: The following mapped fields are missing from the CSV headers:");
+            LogError("Error: The following mapped fields are missing from the CSV headers:");
             foreach (var header in missingHeaders)
             {
                 Console.WriteLine($"  - {header}");
+                LogError($"  - {header}");
             }
             return false;
         }
@@ -248,9 +288,11 @@ class Program
         if (invalidTargets.Any())
         {
             Console.WriteLine("Error: The following target fields are not valid Schedule properties:");
+            LogError("Error: The following target fields are not valid Schedule properties:");
             foreach (var target in invalidTargets)
             {
                 Console.WriteLine($"  - {target}");
+                LogError($"  - {target}");
             }
             return false;
         }
@@ -386,46 +428,112 @@ class Program
 
     private static async Task<List<ScheduleResource>> GetScheduleResources(Main apiClient, Mappings mappings, Dictionary<string, string> row)
     {
+        var allResources = new List<(string value, int typeId)>();
+
+        // Process the general Resource column (pipe-separated)
         var resourceMapping = mappings.Fields.FirstOrDefault(m => m.Target == "Resource");
-        if (resourceMapping == null || string.IsNullOrWhiteSpace(row[resourceMapping.Source]))
+        if (resourceMapping != null && !string.IsNullOrWhiteSpace(row[resourceMapping.Source]))
+        {
+            var resources = row[resourceMapping.Source]
+                .Split('|', StringSplitOptions.RemoveEmptyEntries)
+                .Select(r => r.Trim())
+                .Where(r => !string.IsNullOrEmpty(r));
+
+            foreach (var resource in resources)
+            {
+                string resourceValue;
+                int typeId = 4; // Default type ID
+
+                // Check if resource contains type ID
+                var parts = resource.Split(':');
+                if (parts.Length > 1)
+                {
+                    resourceValue = parts[0].Trim();
+                    if (!int.TryParse(parts[1].Trim(), out typeId))
+                    {
+                        throw new Exception($"Invalid resource type ID format for resource: {resource}");
+                    }
+                }
+                else
+                {
+                    resourceValue = resource;
+                }
+
+                allResources.Add((resourceValue, typeId));
+            }
+        }
+
+        // Process Venue_Resource column (TypeID = 1)
+        var venueMapping = mappings.Fields.FirstOrDefault(m => m.Target == "Venue_Resource");
+        if (venueMapping != null && !string.IsNullOrWhiteSpace(row[venueMapping.Source]))
+        {
+            var venues = row[venueMapping.Source]
+                .Split('|', StringSplitOptions.RemoveEmptyEntries)
+                .Select(r => r.Trim())
+                .Where(r => !string.IsNullOrEmpty(r));
+
+            foreach (var venue in venues)
+            {
+                allResources.Add((venue, 1));
+            }
+        }
+
+        // Process Tutor_Internal_Resource column (TypeID = 2)
+        var tutorInternalMapping = mappings.Fields.FirstOrDefault(m => m.Target == "Tutor_Internal_Resource");
+        if (tutorInternalMapping != null && !string.IsNullOrWhiteSpace(row[tutorInternalMapping.Source]))
+        {
+            var tutorsInternal = row[tutorInternalMapping.Source]
+                .Split('|', StringSplitOptions.RemoveEmptyEntries)
+                .Select(r => r.Trim())
+                .Where(r => !string.IsNullOrEmpty(r));
+
+            foreach (var tutor in tutorsInternal)
+            {
+                allResources.Add((tutor, 2));
+            }
+        }
+
+        // Process Tutor_External_Resource column (TypeID = 4)
+        var tutorExternalMapping = mappings.Fields.FirstOrDefault(m => m.Target == "Tutor_External_Resource");
+        if (tutorExternalMapping != null && !string.IsNullOrWhiteSpace(row[tutorExternalMapping.Source]))
+        {
+            var tutorsExternal = row[tutorExternalMapping.Source]
+                .Split('|', StringSplitOptions.RemoveEmptyEntries)
+                .Select(r => r.Trim())
+                .Where(r => !string.IsNullOrEmpty(r));
+
+            foreach (var tutor in tutorsExternal)
+            {
+                allResources.Add((tutor, 4));
+            }
+        }
+
+        if (!allResources.Any())
         {
             return new List<ScheduleResource>();
         }
 
-        var resources = row[resourceMapping.Source]
-            .Split('|', StringSplitOptions.RemoveEmptyEntries)
-            .Select(r => r.Trim())
-            .Where(r => !string.IsNullOrEmpty(r))
-            .ToList();
-
+        // Process all resources and remove duplicates
         var scheduleResources = new List<ScheduleResource>();
+        var processedResourceKeys = new HashSet<(int resourceId, int typeId)>();
 
-        foreach (var resource in resources)
+        foreach (var (resourceValue, typeId) in allResources)
         {
-            string resourceValue;
-            int typeId = 4; // Default type ID
+            int resourceId;
 
-            // Check if resource contains type ID
-            var parts = resource.Split(':');
-            if (parts.Length > 1)
+            if (int.TryParse(resourceValue, out resourceId))
             {
-                resourceValue = parts[0].Trim();
-                if (!int.TryParse(parts[1].Trim(), out typeId))
+                // Resource value is an ID
+                var key = (resourceId, typeId);
+                if (!processedResourceKeys.Contains(key))
                 {
-                    throw new Exception($"Invalid resource type ID format for resource: {resource}");
+                    scheduleResources.Add(new ScheduleResource { ResourceID = resourceId, TypeID = typeId });
+                    processedResourceKeys.Add(key);
                 }
             }
             else
             {
-                resourceValue = resource;
-            }
-
-            if (int.TryParse(resourceValue, out int resourceId))
-            {
-                scheduleResources.Add(new ScheduleResource { ResourceID = resourceId, TypeID = typeId });
-            }
-            else
-            {
+                // Resource value is a Reference
                 var resourceFilters = new List<Main.Filter>
                 {
                     new Main.Filter { FieldName = "Reference", Operator = "=", Value = resourceValue }
@@ -441,15 +549,60 @@ class Program
                     throw new Exception($"Resource not found with Reference: {resourceValue}");
                 }
 
-                scheduleResources.Add(new ScheduleResource 
-                { 
-                    ResourceID = resourceResponse.Data.First().ID,
-                    TypeID = typeId
-                });
+                resourceId = resourceResponse.Data.First().ID;
+                var key = (resourceId, typeId);
+                if (!processedResourceKeys.Contains(key))
+                {
+                    scheduleResources.Add(new ScheduleResource 
+                    { 
+                        ResourceID = resourceId,
+                        TypeID = typeId
+                    });
+                    processedResourceKeys.Add(key);
+                }
             }
         }
 
         return scheduleResources;
+    }
+
+    private static void Log(string message)
+    {
+        var logMessage = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}";
+        try
+        {
+            File.AppendAllText(logFilePath, logMessage + Environment.NewLine);
+        }
+        catch
+        {
+            // If we can't write to log file, just continue
+        }
+    }
+
+    private static void LogError(string message)
+    {
+        var logMessage = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] ERROR: {message}";
+        try
+        {
+            File.AppendAllText(logFilePath, logMessage + Environment.NewLine);
+        }
+        catch
+        {
+            // If we can't write to log file, just continue
+        }
+    }
+
+    private static void LogWarning(string message)
+    {
+        var logMessage = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] WARNING: {message}";
+        try
+        {
+            File.AppendAllText(logFilePath, logMessage + Environment.NewLine);
+        }
+        catch
+        {
+            // If we can't write to log file, just continue
+        }
     }
 
     public class Resource
