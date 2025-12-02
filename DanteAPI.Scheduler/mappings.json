@@ -1,37 +1,49 @@
 ﻿{
-    "Fields": [
-        {
-            "Source": "Schedule Reference",
-            "Target": "Reference",
-            "Lookup": true
-        },
-        {
-            "Source": "Course Reference",
-            "Target": "CourseReference"
-        },
-        {
-            "Source": "Dates",
-            "Target": "Dates"
-        },
-        {
-            "Source": "Start Time",
-            "Target": "StartTime"
-        },
-        {
-            "Source": "End Time",
-            "Target": "EndTime"
-        },
-        {
-            "Source": "Resource References",
-            "Target": "Resource"
-        },
-        {
-            "Source": "Address Line 1",
-            "Target": "VenueAddressLine1"
-        },
-        {
-            "Source": "Address Line 2",
-            "Target": "VenueAddressLine2"
-        }
-    ]
+  "Fields": [
+    {
+      "Source": "Code",
+      "Target": "Reference",
+      "Lookup": true
+    },
+    {
+      "Source": "Course Reference",
+      "Target": "CourseReference"
+    },
+    {
+      "Source": "Description",
+      "Target": "CourseName"
+    },
+    {
+      "Source": "Dates",
+      "Target": "Dates"
+    },
+    {
+      "Source": "StartTime",
+      "Target": "StartTime"
+    },
+    {
+      "Source": "EndTime",
+      "Target": "EndTime"
+    },
+    {
+      "Source": "CourseVenue",
+      "Target": "Venue_Resource"
+    },
+    {
+      "Source": "Notes",
+      "Target": "Notes"
+    },
+    {
+      "Source": "CourseStatus",
+      "Target": "StatusLookup"
+    },
+    {
+      "Source": "Tutor",
+      "Target": "Tutor_External_Resource"
+    },
+    {
+      "Source": "PricePerDelegate",
+      "Target": "DelegatePrice"
+    }
+  ]
 }
