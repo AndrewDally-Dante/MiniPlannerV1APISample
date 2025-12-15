@@ -111,7 +111,7 @@ class Program
         int maxThreads = 1;
         if (int.TryParse(configuration["MaxThreads"], out int configThreads))
         {
-            maxThreads = Math.Min(Math.Max(1, configThreads), 5);//Max 5 threads
+            maxThreads = Math.Min(Math.Max(1, configThreads), 3);//Max 3 threads
         }
         Console.WriteLine($"Using {maxThreads} thread(s) for processing.");
         Log($"Using {maxThreads} thread(s) for processing.");
