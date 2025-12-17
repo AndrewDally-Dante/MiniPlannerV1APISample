@@ -36,6 +36,14 @@ class Program
         logFilePath = $"import_log_{DateTime.Now:yyyyMMdd_HHmmss}.txt";
         Log($"Import started at {DateTime.Now}");
 
+        // Perform pre-launch validation checks
+        if (!PerformPreLaunchChecks())
+        {
+            Console.WriteLine("\nPress any key to exit...");
+            Console.ReadKey();
+            return;
+        }
+
         try
         {
             // Create a form that will handle the file selection
@@ -96,6 +104,121 @@ class Program
             // Close the form after file selection
             this.Close();
         }
+    }
+
+    static bool PerformPreLaunchChecks()
+    {
+        Console.WriteLine("\n=== Pre-Launch Validation ===");
+        bool allChecksPass = true;
+
+        // Check 1: Verify appsettings.json exists
+        Console.Write("Checking for appsettings.json... ");
+        string appSettingsPath = "appsettings.json";
+        if (!File.Exists(appSettingsPath))
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("FAILED");
+            Console.ResetColor();
+            Console.WriteLine($"  Error: {appSettingsPath} not found.");
+            LogError($"{appSettingsPath} not found.");
+            allChecksPass = false;
+        }
+        else
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("OK");
+            Console.ResetColor();
+
+            // Check 2: Verify required configuration variables
+            try
+            {
+                var configuration = new ConfigurationBuilder()
+                    .AddJsonFile(appSettingsPath, optional: false, reloadOnChange: true)
+                    .Build();
+
+                Console.Write("Checking DanteAPIKey configuration... ");
+                string apiKey = configuration["DanteAPIKey"];
+                if (string.IsNullOrWhiteSpace(apiKey))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("FAILED");
+                    Console.ResetColor();
+                    Console.WriteLine("  Error: DanteAPIKey is not set or is empty.");
+                    LogError("DanteAPIKey is not set in appsettings.json.");
+                    allChecksPass = false;
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine("OK");
+                    Console.ResetColor();
+                }
+
+                Console.Write("Checking DanteURL configuration... ");
+                string apiUrl = configuration["DanteURL"];
+                if (string.IsNullOrWhiteSpace(apiUrl))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("FAILED");
+                    Console.ResetColor();
+                    Console.WriteLine("  Error: DanteURL is not set or is empty.");
+                    LogError("DanteURL is not set in appsettings.json.");
+                    allChecksPass = false;
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine("OK");
+                    Console.ResetColor();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("FAILED");
+                Console.ResetColor();
+                Console.WriteLine($"  Error reading configuration: {ex.Message}");
+                LogError($"Error reading configuration: {ex.Message}");
+                allChecksPass = false;
+            }
+        }
+
+        // Check 3: Verify mappings.json exists
+        Console.Write("Checking for mappings.json... ");
+        string mappingsPath = "mappings.json";
+        if (!File.Exists(mappingsPath))
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("FAILED");
+            Console.ResetColor();
+            Console.WriteLine($"  Error: {mappingsPath} not found.");
+            LogError($"{mappingsPath} not found.");
+            allChecksPass = false;
+        }
+        else
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("OK");
+            Console.ResetColor();
+        }
+
+        Console.WriteLine("=============================\n");
+
+        if (!allChecksPass)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("Pre-launch validation failed. Please fix the errors above before continuing.");
+            Console.ResetColor();
+            LogError("Pre-launch validation failed.");
+        }
+        else
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("All pre-launch checks passed successfully!");
+            Console.ResetColor();
+        }
+
+        return allChecksPass;
     }
 
     static async Task ProcessDataAsync()
