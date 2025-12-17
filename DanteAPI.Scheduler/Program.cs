@@ -291,15 +291,14 @@ class Program
         }
 
         var lookup = mappings.Fields.FirstOrDefault(f => f.Lookup);
-        if (lookup == null)
+        if (lookup != null)
         {
-            var errorMsg = "Mappings must have exactly one lookup field.";
-            Console.WriteLine(errorMsg);
-            LogError(errorMsg);
-            return;
+            Console.WriteLine($"Using lookup-based mapping: {lookup.Source}/{lookup.Target}");
         }
-
-        Console.WriteLine($"Using {lookup.Source}/{lookup.Target} as the lookup field.");
+        else
+        {
+            Console.WriteLine("Using resource-based schedule lookup (Course ID + Date + Resources).");
+        }
 
         // Process each row
         int totalRows = csvData.Count;
@@ -319,31 +318,53 @@ class Program
             await semaphore.WaitAsync();
             try
             {
-                string lookupValue = row.ContainsKey(lookup.Source) ? row[lookup.Source] : null;
-                if (string.IsNullOrEmpty(lookupValue))
-                {
-                    var warnMsg = $"Skipping row {index + 1}: Lookup field is empty.";
-                    Console.WriteLine(warnMsg);
-                    LogWarning(warnMsg);
-                    lock (progressLock)
-                    {
-                        processedRows++;
-                        skippedRows++;
-                    }
-                    return;
-                }
-
                 try
                 {
                     // Create a separate API client for this thread
                     using var threadApiClient = new Main(apiUrl, apiKey);
                     
-                    var schedule = await GetScheduleByLookup(threadApiClient, lookup.Target, lookupValue);
+                    // Get course data upfront for both lookup approaches and insertion
+                    int courseId = await GetCourseId(threadApiClient, mappings, row);
+                    var scheduleDates = await GetScheduleDates(mappings, row);
+                    var scheduleResources = await GetScheduleResources(threadApiClient, mappings, row);
+                    
+                    if (!scheduleDates.Any())
+                    {
+                        var warnMsg = $"Skipping row {index + 1}: No valid dates provided.";
+                        Console.WriteLine(warnMsg);
+                        LogWarning(warnMsg);
+                        lock (progressLock)
+                        {
+                            processedRows++;
+                            skippedRows++;
+                        }
+                        return;
+                    }
+                    
+                    Schedule schedule = null;
+                    
+                    // Use either lookup-based OR resource-based search
+                    if (lookup != null)
+                    {
+                        // Lookup-based mapping approach
+                        string lookupValue = row.ContainsKey(lookup.Source) ? row[lookup.Source] : null;
+                        if (!string.IsNullOrEmpty(lookupValue))
+                        {
+                            schedule = await GetScheduleByLookup(threadApiClient, lookup.Target, lookupValue);
+                        }
+                    }
+                    else
+                    {
+                        // Resource-based lookup approach
+                        DateTime startDate = scheduleDates.First().Date.Date;
+                        schedule = await GetScheduleByResources(threadApiClient, courseId, startDate, scheduleResources);
+                    }
+                    
                     bool isInsert = schedule == null;
                     
-                    if (isInsert)
+                    if (schedule == null)
                     {
-                        schedule = await InsertSchedule(threadApiClient, mappings, row);
+                        schedule = await InsertSchedule(threadApiClient, mappings, row, courseId, scheduleDates, scheduleResources);
                     }
 
                     await UpdateSchedule(threadApiClient, schedule.ID, mappings, row);
@@ -373,7 +394,7 @@ class Program
                 }
                 catch (Exception ex)
                 {
-                    var errorMsg = $"Error processing row {index + 1} (lookup: {lookupValue}): {ex.Message}";
+                    var errorMsg = $"Error processing row {index + 1}: {ex.Message}";
                     Console.WriteLine(errorMsg);
                     LogError(errorMsg);
                     lock (progressLock)
@@ -452,9 +473,9 @@ class Program
             .ToHashSet();
 
         int lookupCount = mappings.Fields.Count(f => f.Lookup);
-        if (lookupCount != 1)
+        if (lookupCount > 1)
         {
-            var errorMsg = $"Error: Mappings must have exactly one lookup field. Found {lookupCount} lookup fields.";
+            var errorMsg = $"Error: Mappings can have at most one lookup field. Found {lookupCount} lookup fields.";
             Console.WriteLine(errorMsg);
             LogError(errorMsg);
             return false;
@@ -524,11 +545,21 @@ class Program
         }
     }
 
-    static async Task<Schedule> InsertSchedule(Main apiClient, Mappings mappings, Dictionary<string, string> row)
+    static async Task<Schedule> InsertSchedule(Main apiClient, Mappings mappings, Dictionary<string, string> row, int? courseId = null, List<ScheduleDate>? scheduleDates = null, List<ScheduleResource>? scheduleResources = null)
     {
-        int courseId = await GetCourseId(apiClient, mappings, row);
-        var scheduleDates = await GetScheduleDates(mappings, row);
-        var scheduleResources = await GetScheduleResources(apiClient, mappings, row);
+        // Use provided values or fetch them if not provided
+        if (!courseId.HasValue)
+        {
+            courseId = await GetCourseId(apiClient, mappings, row);
+        }
+        if (scheduleDates == null)
+        {
+            scheduleDates = await GetScheduleDates(mappings, row);
+        }
+        if (scheduleResources == null)
+        {
+            scheduleResources = await GetScheduleResources(apiClient, mappings, row);
+        }
 
         var requestData = new Dictionary<string, string>
         {
@@ -765,6 +796,37 @@ class Program
 
         return scheduleResources;
     }
+
+    public static async Task<Schedule> GetScheduleByResources(Main apiClient, int courseId, DateTime startDate, List<ScheduleResource> scheduleResources)
+    {
+        var scheduleFilters = new List<Main.Filter>()
+        {
+            new Main.Filter { FieldName = "StartDate", Operator = "=", Value = startDate.ToString("yyyy-MM-dd") },
+            new Main.Filter { FieldName = "CourseID", Operator = "=", Value = courseId.ToString() }
+        };
+        if (scheduleResources.Any(c=> c.TypeID == 1))
+        {
+            scheduleFilters.Add(new Main.Filter
+            {
+                FieldName = "VenueResourceID",
+                Operator = "=",
+                Value = scheduleResources.Where(c => c.TypeID == 1).Select(c => c.ResourceID).FirstOrDefault().ToString()
+            });
+        }
+        if (scheduleResources.Any(c => c.TypeID == 4 || c.TypeID == 2))
+        {
+            scheduleFilters.Add(new Main.Filter
+            {
+                FieldName = "TutorResourceID",
+                Operator = "=",
+                Value = scheduleResources.Where(c => c.TypeID == 4 || c.TypeID == 2).Select(c => c.ResourceID).FirstOrDefault().ToString()
+            });
+        }
+        var response = await apiClient.Select<Schedule>(null, scheduleFilters);
+        return response.IsSuccess && response.Data.Any() ? response.Data.First() : null;
+    }
+
+
 
     private static readonly object logLock = new object();
 

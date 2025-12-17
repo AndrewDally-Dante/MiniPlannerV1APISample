@@ -1,17 +1,8 @@
 ﻿{
   "Fields": [
     {
-      "Source": "Code",
-      "Target": "Reference",
-      "Lookup": true
-    },
-    {
-      "Source": "Course Reference",
+      "Source": "Product Code",
       "Target": "CourseReference"
-    },
-    {
-      "Source": "Description",
-      "Target": "CourseName"
     },
     {
       "Source": "Dates",
@@ -26,23 +17,19 @@
       "Target": "EndTime"
     },
     {
-      "Source": "CourseVenue",
+      "Source": "Venue",
       "Target": "Venue_Resource"
     },
     {
-      "Source": "Notes",
-      "Target": "Notes"
-    },
-    {
-      "Source": "CourseStatus",
+      "Source": "Course Status",
       "Target": "StatusLookup"
     },
     {
-      "Source": "Tutor",
+      "Source": "Trainer",
       "Target": "Tutor_External_Resource"
     },
     {
-      "Source": "PricePerDelegate",
+      "Source": "Selling Price",
       "Target": "DelegatePrice"
     }
   ]
