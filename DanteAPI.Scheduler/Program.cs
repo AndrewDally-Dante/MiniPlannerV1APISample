@@ -368,7 +368,40 @@ class Program
                         schedule = await InsertSchedule(threadApiClient, mappings, row, courseId, scheduleDates, scheduleResources);
                     }
 
-                    await UpdateSchedule(threadApiClient, schedule.ID, mappings, row);
+                    // Try to update the schedule with all fields
+                    try
+                    {
+                        await UpdateSchedule(threadApiClient, schedule.ID, mappings, row);
+                    }
+                    catch (Exception updateEx)
+                    {
+                        // If the full update fails, still try to update the lookup/identifier field
+                        // to prevent duplicates on subsequent imports
+                        var lookupField = mappings.Fields.FirstOrDefault(f => f.Lookup);
+                        if (lookupField != null && row.ContainsKey(lookupField.Source))
+                        {
+                            try
+                            {
+                                var lookupValue = row[lookupField.Source];
+
+                                await UpdateScheduleLookupField(threadApiClient, schedule.ID, lookupField.Target, lookupValue);
+                                var warnMsg = $"Row {index + 1}: Full schedule update failed ({updateEx.Message}), but lookup identifier '{lookupField.Target}' was set to prevent duplicates.";
+                                Console.WriteLine(warnMsg);
+                                LogWarning(warnMsg);
+
+                            }
+                            catch (Exception lookupUpdateEx)
+                            {
+                                // If even the lookup update fails, throw the original exception
+                                throw new Exception($"Failed to update schedule and failed to set lookup identifier: {updateEx.Message}. Lookup update error: {lookupUpdateEx.Message}", updateEx);
+                            }
+                        }
+                        else
+                        {
+                            // No lookup field configured, rethrow the original exception
+                            throw;
+                        }
+                    }
 
                     lock (progressLock)
                     {
@@ -611,6 +644,20 @@ class Program
         if (!response.IsSuccess)
         {
             throw new Exception($"Failed to update schedule: {response.ErrorMessage}");
+        }
+    }
+
+    static async Task UpdateScheduleLookupField(Main apiClient, int scheduleId, string lookupFieldName, string lookupValue)
+    {
+        var data = new Dictionary<string, string>
+        {
+            [lookupFieldName] = lookupValue
+        };
+        
+        var response = await apiClient.Update<Schedule>(scheduleId, data);
+        if (!response.IsSuccess)
+        {
+            throw new Exception($"Failed to update schedule lookup field '{lookupFieldName}': {response.ErrorMessage}");
         }
     }
 
