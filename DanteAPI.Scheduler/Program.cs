@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -11,6 +11,7 @@ using CsvHelper;
 using CsvHelper.Configuration;
 using System.Globalization;
 using Microsoft.Extensions.Configuration;
+using ExcelDataReader;
 
 class Program
 {
@@ -92,8 +93,8 @@ class Program
         {
             using (OpenFileDialog openFileDialog = new OpenFileDialog())
             {
-                openFileDialog.Title = "Select CSV File";
-                openFileDialog.Filter = "CSV files (*.csv)|*.csv";
+                openFileDialog.Title = "Select CSV or Excel File";
+                openFileDialog.Filter = "CSV and Excel files (*.csv;*.xlsx)|*.csv;*.xlsx|CSV files (*.csv)|*.csv|Excel files (*.xlsx)|*.xlsx|All files (*.*)|*.*";
 
                 if (openFileDialog.ShowDialog() == DialogResult.OK)
                 {
@@ -265,7 +266,7 @@ class Program
         List<Dictionary<string, string>> csvData = LoadCsv(csvFilePath);
         if (csvData.Count == 0)
         {
-            var errorMsg = "CSV file is empty.";
+            var errorMsg = "File is empty or contains no data.";
             Console.WriteLine(errorMsg);
             LogError(errorMsg);
             return;
@@ -437,6 +438,20 @@ class Program
 
     static List<Dictionary<string, string>> LoadCsv(string filePath)
     {
+        var extension = Path.GetExtension(filePath).ToLowerInvariant();
+        
+        if (extension == ".xlsx" || extension == ".xls")
+        {
+            return LoadXlsx(filePath);
+        }
+        else
+        {
+            return LoadCsvFile(filePath);
+        }
+    }
+
+    static List<Dictionary<string, string>> LoadCsvFile(string filePath)
+    {
         var records = new List<Dictionary<string, string>>();
 
         using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
@@ -453,6 +468,59 @@ class Program
                 var dict = ((IDictionary<string, object>)row)
                     .ToDictionary(k => k.Key, v => v.Value?.ToString() ?? "");
                 records.Add(dict);
+            }
+        }
+
+        return records;
+    }
+
+    static List<Dictionary<string, string>> LoadXlsx(string filePath)
+    {
+        var records = new List<Dictionary<string, string>>();
+        
+        // ExcelDataReader handles file sharing better and automatically converts dates/times
+        using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+        {
+            // Register code page provider for older Excel formats
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+            
+            using (var reader = ExcelReaderFactory.CreateReader(stream))
+            {
+                // Read the first sheet (index 0)
+                var result = reader.AsDataSet(new ExcelDataSetConfiguration()
+                {
+                    ConfigureDataTable = (_) => new ExcelDataTableConfiguration()
+                    {
+                        UseHeaderRow = true // First row contains headers
+                    }
+                });
+
+                if (result.Tables.Count == 0)
+                {
+                    return records; // Empty file
+                }
+
+                var table = result.Tables[0];
+                
+                // Get headers from column names
+                var headers = table.Columns.Cast<System.Data.DataColumn>()
+                    .Select(col => col.ColumnName)
+                    .ToList();
+
+                // Read data rows
+                foreach (System.Data.DataRow dataRow in table.Rows)
+                {
+                    var dict = new Dictionary<string, string>();
+                    
+                    foreach (var header in headers)
+                    {
+                        var value = dataRow[header];
+                        // ExcelDataReader automatically converts dates/times to proper formats
+                        dict[header] = value?.ToString() ?? "";
+                    }
+                    
+                    records.Add(dict);
+                }
             }
         }
 
@@ -481,7 +549,7 @@ class Program
             return false;
         }
 
-        // Check for missing CSV headers
+        // Check for missing headers
         var missingHeaders = mappings.Fields
             .Where(f => !csvHeaders.ContainsKey(f.Source))
             .Select(f => f.Source)
@@ -489,8 +557,8 @@ class Program
 
         if (missingHeaders.Any())
         {
-            Console.WriteLine("Error: The following mapped fields are missing from the CSV headers:");
-            LogError("Error: The following mapped fields are missing from the CSV headers:");
+            Console.WriteLine("Error: The following mapped fields are missing from the file headers:");
+            LogError("Error: The following mapped fields are missing from the file headers:");
             foreach (var header in missingHeaders)
             {
                 Console.WriteLine($"  - {header}");
@@ -503,6 +571,7 @@ class Program
         var invalidTargets = mappings.Fields
             .Where(f => !PredefinedFields.Contains(f.Target))
             .Where(f => !scheduleProperties.Contains(f.Target))
+            .Where(f => !f.Target.StartsWith("Custom"))
             .Select(f => f.Target)
             .ToList();
 
@@ -614,6 +683,41 @@ class Program
         return courseResponse.Data.First().ID;
     }
 
+    private static TimeSpan ParseTimeSpan(string timeValue)
+    {
+        // Try parsing as TimeSpan directly (e.g., "09:30:00")
+        if (TimeSpan.TryParse(timeValue, out TimeSpan timeSpan))
+        {
+            return timeSpan;
+        }
+
+        // Try parsing as DateTime (Excel often stores times as DateTime, e.g., "30/12/1899 09:30:00")
+        if (DateTime.TryParse(timeValue, out DateTime dateTime))
+        {
+            return dateTime.TimeOfDay;
+        }
+
+        throw new Exception($"Unable to parse time value: {timeValue}");
+    }
+
+    private static DateTime ParseDateTime(string dateValue)
+    {
+        // ExcelDataReader automatically converts Excel dates, so we just need to parse the string
+        if (DateTime.TryParse(dateValue, out DateTime dateTime))
+        {
+            return dateTime;
+        }
+
+        // Fallback: Try parsing as Excel date serial number (for CSV files or edge cases)
+        if (double.TryParse(dateValue, out double serialNumber))
+        {
+            DateTime excelEpoch = new DateTime(1899, 12, 30); // Excel's epoch
+            return excelEpoch.AddDays(serialNumber);
+        }
+
+        throw new Exception($"Unable to parse date value: {dateValue}");
+    }
+
     private static async Task<List<ScheduleDate>> GetScheduleDates(Mappings mappings, Dictionary<string, string> row)
     {
         var dateMapping = mappings.Fields.FirstOrDefault(m => m.Target == "Dates");
@@ -641,17 +745,17 @@ class Program
 
         if (startTimeMapping != null && !string.IsNullOrWhiteSpace(row[startTimeMapping.Source]))
         {
-            startTime = TimeSpan.Parse(row[startTimeMapping.Source]);
+             startTime = ParseTimeSpan(row[startTimeMapping.Source]);
         }
 
         if (endTimeMapping != null && !string.IsNullOrWhiteSpace(row[endTimeMapping.Source]))
         {
-            endTime = TimeSpan.Parse(row[endTimeMapping.Source]);
+            endTime = ParseTimeSpan(row[endTimeMapping.Source]);
         }
 
         return dates.Select(dateStr => new ScheduleDate
         {
-            Date = DateTime.Parse(dateStr),
+            Date = ParseDateTime(dateStr),
             StartTime = startTime,
             EndTime = endTime
         }).ToList();
