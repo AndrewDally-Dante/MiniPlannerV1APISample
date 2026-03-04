@@ -1,7 +1,12 @@
 ﻿{
   "Fields": [
     {
-      "Source": "Product Code",
+      "Source": "Schedule Reference",
+      "Target": "Reference",
+      "Lookup": true
+    },
+    {
+      "Source": "Course Reference",
       "Target": "CourseReference"
     },
     {
@@ -9,28 +14,44 @@
       "Target": "Dates"
     },
     {
-      "Source": "StartTime",
-      "Target": "StartTime"
-    },
-    {
-      "Source": "EndTime",
-      "Target": "EndTime"
-    },
-    {
-      "Source": "Venue",
-      "Target": "Venue_Resource"
-    },
-    {
-      "Source": "Course Status",
+      "Source": "Status",
       "Target": "StatusLookup"
     },
     {
-      "Source": "Trainer",
+      "Source": "Tutor Internal Reference",
+      "Target": "Tutor_Internal_Resource"
+    },
+    {
+      "Source": "Tutor External Reference",
       "Target": "Tutor_External_Resource"
     },
     {
-      "Source": "Selling Price",
+      "Source": "Venue Reference",
+      "Target": "Venue_Resource"
+    },
+    {
+      "Source": "Start Time",
+      "Target": "StartTime"
+    },
+    {
+      "Source": "End Time",
+      "Target": "EndTime"
+    },
+    {
+      "Source": "Delegate Price",
       "Target": "DelegatePrice"
+    },
+    {
+      "Source": "Course Price",
+      "Target": "CoursePrice"
+    },
+    {
+      "Source": "Minimum Delegates",
+      "Target": "MinDelegates"
+    },
+    {
+      "Source": "Maximum Delegates",
+      "Target": "MaxDelegates"
     }
   ]
 }
