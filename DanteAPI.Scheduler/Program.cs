@@ -25,6 +25,12 @@ class Program
         "Venue_Resource", "Tutor_Internal_Resource", "Tutor_External_Resource"
     };
 
+    // Predefined fields that are also updatable schedule scalars via Schedule/Update
+    private static readonly HashSet<string> UpdatablePredefinedFields = new HashSet<string>
+    {
+        "StartTime", "EndTime"
+    };
+
     [STAThread]
     static void Main()
     {
@@ -637,8 +643,12 @@ class Program
     static async Task UpdateSchedule(Main apiClient, int scheduleId, Mappings mappings, Dictionary<string, string> row)
     {
         var data = mappings.Fields
-            .Where(f => !PredefinedFields.Contains(f.Target))
-            .ToDictionary(m => m.Target, m => row[m.Source]);
+            .Where(f => !PredefinedFields.Contains(f.Target) || UpdatablePredefinedFields.Contains(f.Target))
+            .ToDictionary(
+                m => m.Target,
+                m => UpdatablePredefinedFields.Contains(m.Target) && !string.IsNullOrWhiteSpace(row[m.Source])
+                    ? ParseTimeSpan(row[m.Source]).ToString()
+                    : row[m.Source]);
         
         var response = await apiClient.Update<Schedule>(scheduleId, data);
         if (!response.IsSuccess)
