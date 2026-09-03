@@ -184,7 +184,7 @@ namespace DanteAPI.Backup
 
                     var response = await api.Select<T>(
                         new List<string> { "*" },
-                        new List<DanteAPI.Main.Filter>(),
+                        new List<DanteAPI.Filter>(),
                         pageSize,
                         pageIndex
                     );

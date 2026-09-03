@@ -631,9 +631,9 @@ class Program
 
     static async Task<Schedule> GetScheduleByLookup(Main apiClient, string lookupField, string lookupValue)
     {
-        var filters = new List<Main.Filter>
+        var filters = new List<Filter>
         {
-            new Main.Filter { FieldName = lookupField, Operator = "=", Value = lookupValue }
+            new Filter { FieldName = lookupField, Operator = "=", Value = lookupValue }
         };
 
         var response = await apiClient.Select<Schedule>(null, filters);
@@ -723,9 +723,9 @@ class Program
         }
 
         var courseRef = row[courseRefMapping.Source];
-        var courseFilters = new List<Main.Filter>
+        var courseFilters = new List<Filter>
         {
-            new Main.Filter { FieldName = "Reference", Operator = "=", Value = courseRef }
+            new Filter { FieldName = "Reference", Operator = "=", Value = courseRef }
         };
 
         var courseResponse = await apiClient.Select<Course>(null, courseFilters);
@@ -926,9 +926,9 @@ class Program
             else
             {
                 // Resource value is a Reference
-                var resourceFilters = new List<Main.Filter>
+                var resourceFilters = new List<Filter>
                 {
-                    new Main.Filter { FieldName = "Reference", Operator = "=", Value = resourceValue }
+                    new Filter { FieldName = "Reference", Operator = "=", Value = resourceValue }
                 };
 
                 var resourceResponse = await apiClient.Select<Resource>(null, resourceFilters);
@@ -960,14 +960,14 @@ class Program
 
     public static async Task<Schedule> GetScheduleByResources(Main apiClient, int courseId, DateTime startDate, List<ScheduleResource> scheduleResources)
     {
-        var scheduleFilters = new List<Main.Filter>()
+        var scheduleFilters = new List<Filter>()
         {
-            new Main.Filter { FieldName = "StartDate", Operator = "=", Value = startDate.ToString("yyyy-MM-dd") },
-            new Main.Filter { FieldName = "CourseID", Operator = "=", Value = courseId.ToString() }
+            new Filter { FieldName = "StartDate", Operator = "=", Value = startDate.ToString("yyyy-MM-dd") },
+            new Filter { FieldName = "CourseID", Operator = "=", Value = courseId.ToString() }
         };
         if (scheduleResources.Any(c=> c.TypeID == 1))
         {
-            scheduleFilters.Add(new Main.Filter
+            scheduleFilters.Add(new Filter
             {
                 FieldName = "VenueResourceID",
                 Operator = "=",
@@ -976,7 +976,7 @@ class Program
         }
         if (scheduleResources.Any(c => c.TypeID == 4 || c.TypeID == 2))
         {
-            scheduleFilters.Add(new Main.Filter
+            scheduleFilters.Add(new Filter
             {
                 FieldName = "TutorResourceID",
                 Operator = "=",

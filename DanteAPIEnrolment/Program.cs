@@ -89,9 +89,9 @@ namespace DanteAPIEnrolment
         {
             var selectResponse = await api.Select<DanteAPI.Entities.Schedule>(
                 new List<string> { "BookingID", "CourseName", "StartDate" },
-                new List<DanteAPI.Main.Filter>
+                new List<DanteAPI.Filter>
                 {
-                    new DanteAPI.Main.Filter { FieldName = "Reference", Operator = "=", Value = scheduleReference }
+                    new DanteAPI.Filter { FieldName = "Reference", Operator = "=", Value = scheduleReference }
                 });
 
             if (!selectResponse.IsSuccess)
@@ -107,10 +107,10 @@ namespace DanteAPIEnrolment
         {
             var selectResponse = await api.Select<DanteAPI.Entities.ScheduleDelegate>(
                 new List<string> { "Booking", "Booking.Company", "DelegateID", "Quantity" },
-                new List<DanteAPI.Main.Filter>
+                new List<DanteAPI.Filter>
                 {
-                    new DanteAPI.Main.Filter { FieldName = "ScheduleID", Operator = "=", Value = scheduleID.ToString() },
-                    new DanteAPI.Main.Filter { FieldName = "GroupBooking", Operator = "=", Value = true.ToString() }
+                    new DanteAPI.Filter { FieldName = "ScheduleID", Operator = "=", Value = scheduleID.ToString() },
+                    new DanteAPI.Filter { FieldName = "GroupBooking", Operator = "=", Value = true.ToString() }
                 });
 
             if (!selectResponse.IsSuccess)
@@ -126,10 +126,10 @@ namespace DanteAPIEnrolment
         {
             var selectResponse = await api.Select<DanteAPI.Entities.Delegate>(
                 new List<string>(),
-                new List<DanteAPI.Main.Filter>
+                new List<DanteAPI.Filter>
                 {
-                    new DanteAPI.Main.Filter { FieldName = "CompanyID", Operator = "=", Value = companyID.ToString() },
-                    new DanteAPI.Main.Filter { FieldName = "Email", Operator = "=", Value = email }
+                    new DanteAPI.Filter { FieldName = "CompanyID", Operator = "=", Value = companyID.ToString() },
+                    new DanteAPI.Filter { FieldName = "Email", Operator = "=", Value = email }
                 });
 
             if (!selectResponse.IsSuccess)
