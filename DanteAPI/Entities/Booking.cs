@@ -1,6 +1,6 @@
 ﻿namespace DanteAPI.Entities
 {
-    public class Booking
+    public class Booking : EntityWithCustomFields
     {
         public int ID { get; set; }
         public string ImportID { get; set; }
@@ -43,7 +43,6 @@
         public ICollection<References.BookingItem> Items { get; set; }
         public bool Online { get; set; }
         public References.GenericItem EnquirySource { get; set; }
-        public string CustomField { get; set; }
         public string AddressCountryLookup { get; set; }
         public string StatusLookup { get; set; }
         public string PaymentStatusLookup { get; set; }

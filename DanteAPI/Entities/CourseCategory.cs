@@ -1,6 +1,6 @@
 using System;
 namespace DanteAPI.Entities {
-    public class CourseCategory {
+    public class CourseCategory : EntityWithCustomFields {
         public int ID { get; set; }
         public string ImportID { get; set; }
         public string Name { get; set; }
@@ -15,6 +15,5 @@ namespace DanteAPI.Entities {
         public string ImageBannerURL { get; set; }
         public References.File ImageFile { get; set; }
         public References.File ImageBannerFile { get; set; }
-        public string CustomField { get; set; }
     }
 }

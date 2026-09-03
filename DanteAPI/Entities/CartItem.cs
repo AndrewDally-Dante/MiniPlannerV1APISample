@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 namespace DanteAPI.Entities {
-    public class CartItem {
+    public class CartItem : EntityWithCustomFields {
         public int ID { get; set; }
         public int CartID { get; set; }
         public Cart Cart { get; set; }
@@ -23,6 +23,5 @@ namespace DanteAPI.Entities {
         public decimal Tax { get; set; }
         public decimal UnitTotalTax { get; set; }
         public decimal TotalTax { get; set; }
-        public string CustomField { get; set; }
     }
 }

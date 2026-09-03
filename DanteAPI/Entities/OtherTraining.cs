@@ -1,6 +1,6 @@
 namespace DanteAPI.Entities
 {
-    public class OtherTraining
+    public class OtherTraining : EntityWithCustomFields
     {
         public int ID { get; set; }
         public string ImportID { get; set; }
@@ -20,7 +20,6 @@ namespace DanteAPI.Entities
         public int? ResultID { get; set; }
         public decimal ResultMark { get; set; }
         public string Notes { get; set; }
-        public string CustomField { get; set; }
         public string StatusLookup { get; set; }
         public string ResultLookup { get; set; }
     }

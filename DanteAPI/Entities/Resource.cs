@@ -1,6 +1,6 @@
 using System;
 namespace DanteAPI.Entities {
-    public class Resource {
+    public class Resource : EntityWithCustomFields {
         public int ID { get; set; }
         public bool Active { get; set; }
         public string Reference { get; set; }
@@ -25,6 +25,5 @@ namespace DanteAPI.Entities {
         public decimal? Cost { get; set; }
         public byte CostPer { get; set; }
         public string OnlineDisplayName { get; set; }
-        public string CustomField { get; set; }
     }
 }

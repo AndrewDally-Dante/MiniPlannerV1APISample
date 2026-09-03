@@ -1,6 +1,6 @@
 ﻿namespace DanteAPI.Entities
 {
-    public class Course
+    public class Course : EntityWithCustomFields
     {
         public int ID { get; set; }
         public string Reference { get; set; }
@@ -36,7 +36,6 @@
         public DateTime? ModifiedDate { get; set; }
         public References.CourseType CourseType { get; set; }
         public int? CourseTypeID { get; set; }
-        public string CustomField { get; set; }
         public string Content1 { get; set; }
         public string Content2 { get; set; }
         public string Content3 { get; set; }

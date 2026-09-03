@@ -1,6 +1,6 @@
 using System;
 namespace DanteAPI.Entities {
-    public class Cart {
+    public class Cart : EntityWithCustomFields {
         public int ID { get; set; }
         public string Token { get; set; }
         public string ImportID { get; set; }
@@ -15,6 +15,5 @@ namespace DanteAPI.Entities {
         public int? DelegateID { get; set; }
         public Delegate Delegate { get; set; }
         public DateTime? ModifiedDate { get; set; }
-        public string CustomField { get; set; }
     }
 }

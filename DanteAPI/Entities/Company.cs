@@ -1,7 +1,7 @@
 ﻿using DanteAPI.Entities.References;
 namespace DanteAPI.Entities
 {
-    public  class Company
+    public class Company : EntityWithCustomFields
     {
         public int ID { get; set; }
         public string ImportID { get; set; }
@@ -51,23 +51,5 @@ namespace DanteAPI.Entities
         public int? ParentCompanyID { get; set; }
         public string AddressCountryLookup { get; set; }
         public string InvoiceAddressCountryLookup { get; set; }
-
-
-        #region Custom Fields
-        //Custom fields are dynamic, so the below can be expanded to include additional fields
-        public string Custom1 { get; set; }
-        public string Custom2 { get; set; }
-        public string Custom3 { get; set; }
-        public string Custom4 { get; set; }
-        public string Custom5 { get; set; }
-        public string Custom6 { get; set; }
-        public string Custom7 { get; set; }
-        public string Custom8 { get; set; }
-        public string Custom9 { get; set; }
-        public string Custom10 { get; set; }
-
-        #endregion
-
-
     }
 }

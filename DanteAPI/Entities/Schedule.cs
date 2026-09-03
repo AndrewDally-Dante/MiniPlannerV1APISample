@@ -2,7 +2,7 @@
 
 namespace DanteAPI.Entities
 {
-    public class Schedule
+    public class Schedule : EntityWithCustomFields
     {
         public int ID { get; set; }
         public int CourseID { get; set; }
@@ -68,7 +68,6 @@ namespace DanteAPI.Entities
         public DateTime? ModifiedDate { get; set; }
         public References.CourseType CourseType { get; set; }
         public int? CourseTypeID { get; set; }
-        public string CustomField { get; set; }
         public string StatusLookup { get; set; }
         public string VenueAddressCountryLookup { get; set; }
     }

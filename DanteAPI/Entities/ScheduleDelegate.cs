@@ -1,6 +1,6 @@
 ﻿namespace DanteAPI.Entities
 {
-    public class ScheduleDelegate
+    public class ScheduleDelegate : EntityWithCustomFields
     {
         public int ID { get; set; }
         public int ScheduleID { get; set; }
@@ -33,12 +33,7 @@
         public string Notes { get; set; }
         public System.DateTime? ModifiedDate { get; set; }
 
-        #region Custom Fields
-        public string CustomField { get; set; }
         public string StatusLookup { get; set; }
         public string ResultLookup { get; set; }
-        #endregion
-
-
     }
 }

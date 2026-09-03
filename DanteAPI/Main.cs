@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Reflection;
-using System.Text;
+﻿using System.Reflection;
 using System.Text.Json;
-using System.Threading.Tasks;
+using DanteAPI.Entities;
+using DanteAPI.Json;
 
 namespace DanteAPI
 {
@@ -42,12 +38,7 @@ namespace DanteAPI
 
                 if (httpResponse.IsSuccessStatusCode)
                 {
-                    var options = new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    };
-
-                    response.Data = JsonSerializer.Deserialize<ValidateKeyResult>(responseBody, options);
+                    response.Data = JsonSerializer.Deserialize<ValidateKeyResult>(responseBody, JsonDefaults.CreateOptions());
                     response.IsSuccess = true;
                 }
                 else
@@ -100,12 +91,7 @@ namespace DanteAPI
 
                 if (httpResponse.IsSuccessStatusCode)
                 {
-                    var options = new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    };
-
-                    response.Data = JsonSerializer.Deserialize<List<T>>(responseBody, options);
+                    response.Data = JsonSerializer.Deserialize<List<T>>(responseBody, JsonDefaults.CreateOptions());
                     response.IsSuccess = true;
                 }
                 else
@@ -148,12 +134,7 @@ namespace DanteAPI
 
                 if (httpResponse.IsSuccessStatusCode)
                 {
-                    var options = new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    };
-
-                    response.Data = JsonSerializer.Deserialize<T>(responseBody, options);
+                    response.Data = JsonSerializer.Deserialize<T>(responseBody, JsonDefaults.CreateOptions());
                     response.IsSuccess = true;
                 }
                 else
@@ -196,12 +177,7 @@ namespace DanteAPI
 
                 if (httpResponse.IsSuccessStatusCode)
                 {
-                    var options = new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    };
-
-                    response.Data = JsonSerializer.Deserialize<T>(responseBody, options);
+                    response.Data = JsonSerializer.Deserialize<T>(responseBody, JsonDefaults.CreateOptions());
                     response.IsSuccess = true;
                 }
                 else
@@ -229,22 +205,18 @@ namespace DanteAPI
             if (entity == null)
                 return dictionary;
 
-            // Get all properties of the entity
             PropertyInfo[] properties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
             foreach (PropertyInfo property in properties)
             {
-                // Skip properties that can't be read
                 if (!property.CanRead)
                     continue;
 
-                // Get the property value
+                if (property.Name == nameof(EntityWithCustomFields.CustomFields))
+                    continue;
+
                 object value = property.GetValue(entity);
-
-                // Convert value to string (handling null values)
                 string stringValue = value?.ToString();
-
-                // Add to dictionary
                 dictionary.Add(property.Name, stringValue);
             }
 
@@ -289,12 +261,11 @@ namespace DanteAPI
 
         public async Task<ApiResponse<T>> CustomAction<T>(string action, Dictionary<string, string> data)
         {
-
             string url;
             if (typeof(T) == typeof(object))
                 url = $"{DanteURL}/API/V1/{action}";
             else url = $"{DanteURL}/API/V1/{typeof(T).Name}/{action}";
-            
+
             var response = new ApiResponse<T>();
 
             try
@@ -319,11 +290,7 @@ namespace DanteAPI
                     }
                     else
                     {
-                        var options = new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true
-                        };
-                        response.Data = JsonSerializer.Deserialize<T>(responseBody, options);
+                        response.Data = JsonSerializer.Deserialize<T>(responseBody, JsonDefaults.CreateOptions());
                     }
                     response.IsSuccess = true;
                 }
@@ -355,45 +322,13 @@ namespace DanteAPI
         /// </summary>
         public async Task<ApiResponse<T>> CustomActionEntity<T, E>(string action, E entity)
         {
-            // Convert entity to dictionary
             Dictionary<string, string> data = ConvertEntityToDictionary(entity);
-
-            // Call the existing CustomAction method
             return await CustomAction<T>(action, data);
-        }
-
-        public class Filter
-        {
-            public string FieldName { get; set; }
-            public string Operator { get; set; }
-            public string Value { get; set; }
-            public int? DecryptValue { get; set; }
         }
 
         public void Dispose()
         {
             _client?.Dispose();
         }
-    }
-
-    public class ApiResponse<T>
-    {
-        public bool IsSuccess { get; set; }           // Indicates if the request was successful
-        public T Data { get; set; }                   // The data returned from the API
-        public string ErrorMessage { get; set; }      // The error message, if any
-        public HttpStatusCode StatusCode { get; set; } // The HTTP status code
-    }
-
-    public class ValidateKeyResult
-    {
-        public bool Valid { get; set; }
-        public List<string> Messages { get; set; }
-        public List<ValidateKeyPermission> Permisison { get; set; }
-    }
-    public class ValidateKeyPermission
-    {
-        public string Context { get; set; }
-        public int PermissionsValue { get; set; }
-        public List<string> PermissionsList { get; set; }
     }
 }

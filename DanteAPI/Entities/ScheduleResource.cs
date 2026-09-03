@@ -1,6 +1,6 @@
 using System;
 namespace DanteAPI.Entities {
-    public class ScheduleResource {
+    public class ScheduleResource : EntityWithCustomFields {
         public int ID { get; set; }
         public int ScheduleID { get; set; }
         public Schedule Schedule { get; set; }
@@ -15,6 +15,5 @@ namespace DanteAPI.Entities {
         public byte CostPer { get; set; }
         public DateTime? InvoiceDate { get; set; }
         public string InvoiceNumber { get; set; }
-        public string CustomField { get; set; }
     }
 }

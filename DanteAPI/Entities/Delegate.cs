@@ -1,6 +1,6 @@
 ﻿namespace DanteAPI.Entities
 {
-    public class Delegate
+    public class Delegate : EntityWithCustomFields
     {
         public int ID { get; set; }
         public string ImportID { get; set; }
@@ -49,7 +49,6 @@
         public string ImageURL { get; set; }
         public References.File ImageFile { get; set; }
         public bool Coordinator { get; set; }
-        public string CustomField { get; set; }
         public string GenderLookup { get; set; }
         public string EthnicityLookup { get; set; }
         public string AddressCountryLookup { get; set; }

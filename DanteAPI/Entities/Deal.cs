@@ -1,6 +1,6 @@
 namespace DanteAPI.Entities
 {
-    public class Deal
+    public class Deal : EntityWithCustomFields
     {
         public int ID { get; set; }
         public int Reference { get; set; }
@@ -30,6 +30,5 @@ namespace DanteAPI.Entities
         public decimal? Total { get; set; }
         public ICollection<References.DealCourseItem> CourseItems { get; set; }
         public ICollection<References.DealAdHocItem> AdHocItems { get; set; }
-        public string CustomField { get; set; }
     }
 }
