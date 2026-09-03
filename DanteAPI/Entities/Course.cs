@@ -15,6 +15,7 @@
         public decimal DelegatePrice { get; set; }
         public decimal CoursePrice { get; set; }
         public string Prerequisites { get; set; }
+        public decimal DelegateFees { get; set; }
         public int? TaxCodeID { get; set; }
         public References.TaxCode TaxCode { get; set; }
         public string NominalCode { get; set; }

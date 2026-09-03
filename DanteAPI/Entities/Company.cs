@@ -16,6 +16,7 @@ namespace DanteAPI.Entities
         public string AddressLine4 { get; set; }
         public string AddressLine5 { get; set; }
         public string AddressCountryID { get; set; }
+        public References.Country AddressCountry { get; set; }
         public string Postcode { get; set; }
         public string PhoneNumber { get; set; }
         public string Email { get; set; }
@@ -28,6 +29,7 @@ namespace DanteAPI.Entities
         public string InvoiceAddressLine5 { get; set; }
 
         public string InvoiceAddressCountryID { get; set; }
+        public References.Country InvoiceAddressCountry { get; set; }
 
         public string InvoicePostcode { get; set; }
         public string InvoiceEmail { get; set; }
@@ -45,6 +47,10 @@ namespace DanteAPI.Entities
 
         public GenericItem EnquirySource { get; set; }
         public string EnquirySourceLookup { get; set; }
+
+        public int? ParentCompanyID { get; set; }
+        public string AddressCountryLookup { get; set; }
+        public string InvoiceAddressCountryLookup { get; set; }
 
 
         #region Custom Fields

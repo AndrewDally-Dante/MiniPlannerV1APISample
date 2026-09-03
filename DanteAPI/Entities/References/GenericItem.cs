@@ -10,6 +10,7 @@ namespace DanteAPI.Entities.References
     {
         public int ID { get; set; }
         public short Type { get; set; }
+        public string TypeName { get; set; }
         public string Name { get; set; }
     }
 }

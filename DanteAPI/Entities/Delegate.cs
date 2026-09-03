@@ -23,6 +23,8 @@
         public string NationalInsuranceNumber { get; set; }
         public string PayrollNumber { get; set; }
         public string DietaryRequirements { get; set; }
+        public string SpecialRequirements { get; set; }
+        public string Notes { get; set; }
         public References.GenericItem Gender { get; set; }
         public References.GenericItem Ethnicity { get; set; }
         public System.DateTime? StartDate { get; set; }
@@ -37,6 +39,7 @@
         public string AddressLine5 { get; set; }
 
         public string AddressCountryID { get; set; }
+        public References.Country AddressCountry { get; set; }
 
         public string Postcode { get; set; }
         public System.DateTime? EnteredDate { get; set; }

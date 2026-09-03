@@ -10,6 +10,7 @@
         public DateTime EnteredDate { get; set; }
         public int? EnteredByUserID { get; set; }
         public References.User EnteredByUser { get; set; }
+        public DateTime Date { get; set; }
         public DateTime? ModifiedDate { get; set; }
         public int? CompanyID { get; set; }
         public Company Company { get; set; }
@@ -40,6 +41,8 @@
         public decimal? TotalTax { get; set; }
         public decimal? TotalWithTax { get; set; }
         public ICollection<References.BookingItem> Items { get; set; }
+        public bool Online { get; set; }
+        public References.GenericItem EnquirySource { get; set; }
         public string CustomField { get; set; }
         public string AddressCountryLookup { get; set; }
         public string StatusLookup { get; set; }

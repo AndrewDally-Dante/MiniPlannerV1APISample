@@ -7,16 +7,23 @@ namespace DanteAPI.Entities
         public int ID { get; set; }
         public int CourseID { get; set; }
         public string ImportID { get; set; }
+        public decimal DelegateFees { get; set; }
+        public Course Course { get; set; }
         public int? MasterScheduleID { get; set; }
         public string Reference { get; set; }
         public string CourseName { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
+        public DateTime ArriveDateTime { get; set; }
+        public DateTime StartDateTime { get; set; }
+        public DateTime EndDateTime { get; set; }
         public ICollection<ScheduleDate> Dates { get; set; }
         public short DayCount { get; set; }
         public short DayNumber { get; set; }
         public string Duration { get; set; }
         public int? StatusID { get; set; }
+        public double DurationMinutesArriveTime { get; set; }
+        public double DurationMinutesStartTime { get; set; }
         public References.Status Status { get; set; }
         public int PlacesLeft { get; set; }
         public int CountDelegates { get; set; }
@@ -27,7 +34,9 @@ namespace DanteAPI.Entities
         public TimeSpan? LunchTime { get; set; }
         public TimeSpan? EndTime { get; set; }
         public int? BookingID { get; set; }
+        public string DelegatePriceCurrency { get; set; }
         public decimal DelegatePrice { get; set; }
+        public string CoursePriceCurrency { get; set; }
         public decimal CoursePrice { get; set; }
         public int? TaxCodeID { get; set; }
         public References.TaxCode TaxCode { get; set; }
